@@ -1,0 +1,32 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // Spring Boot Starters
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.boot:spring-boot-starter-validation'
+    api 'org.springframework.boot:spring-boot-starter-cache'
+    api 'org.springframework.boot:spring-boot-starter-data-redis'
+    
+    // Database
+    runtimeOnly 'org.postgresql:postgresql'
+    api 'org.flywaydb:flyway-core'
+    api 'org.flywaydb:flyway-database-postgresql'
+    
+    // MapStruct for DTO mapping
+    api 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    
+    // JSON processing
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+}
+
+// Ensure Lombok and MapStruct work together
+tasks.withType(JavaCompile) {
+    options.compilerArgs += [
+        '-Amapstruct.defaultComponentModel=spring',
+        '-Amapstruct.unmappedTargetPolicy=IGNORE'
+    ]
+}
+

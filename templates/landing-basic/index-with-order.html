@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{description}}">
+    <meta name="organization-id" content="{{organizationId}}">
+    <meta name="landing-id" content="{{landingId}}">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="order-form.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h2>{{organizationName}}</h2>
+                </div>
+                <nav class="nav">
+                    <a href="#about">О нас</a>
+                    <a href="#promotions">Акции</a>
+                    <a href="#products">Каталог</a>
+                    <a href="#contacts">Контакты</a>
+                </nav>
+                <div class="header-actions">
+                    <a href="tel:{{phone}}" class="header-phone">{{phone}}</a>
+                    <button class="btn btn-primary" onclick="openOrderModal()">
+                        <span class="cart-badge">
+                            🛒 Корзина
+                            <span id="cart-count" class="cart-count">0</span>
+                        </span>
+                    </button>
+                </div>
+                <button class="mobile-menu-toggle" aria-label="Меню">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>{{h1}}</h1>
+                <p class="hero-description">{{description}}</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="openOrderModal()">Оформить заказ</button>
+                    <a href="#contacts" class="btn btn-secondary">Связаться с нами</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section about">
+        <div class="container">
+            <h2 class="section-title">О нас</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>{{aboutUs}}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Promotions Section -->
+    {{#if promotions}}
+    <section id="promotions" class="section promotions">
+        <div class="container">
+            <h2 class="section-title">Акции и специальные предложения</h2>
+            <div class="promotions-grid">
+                {{#each promotions}}
+                <div class="promotion-card">
+                    {{#if imageUrl}}
+                    <img src="{{imageUrl}}" alt="{{title}}" class="promotion-image">
+                    {{/if}}
+                    <div class="promotion-content">
+                        <h3>{{title}}</h3>
+                        <p>{{description}}</p>
+                        {{#if validTo}}
+                        <p class="promotion-validity">Действует до: {{formatDate validTo}}</p>
+                        {{/if}}
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </section>
+    {{/if}}
+
+    <!-- Products Section -->
+    {{#if products}}
+    <section id="products" class="section products">
+        <div class="container">
+            <h2 class="section-title">Наши товары и услуги</h2>
+            <div class="products-grid">
+                {{#each products}}
+                <div class="product-card">
+                    {{#if imageUrl}}
+                    <img src="{{imageUrl}}" alt="{{name}}" class="product-image">
+                    {{/if}}
+                    <div class="product-content">
+                        <h3>{{name}}</h3>
+                        <p class="product-description">{{description}}</p>
+                        <div class="product-footer">
+                            <p class="product-price">{{formatPrice price}} руб.</p>
+                            <button class="add-to-cart-btn" 
+                                    onclick="addToCart({{id}}, '{{name}}', {{price}})">
+                                Добавить в корзину
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </section>
+    {{/if}}
+
+    <!-- Contacts Section -->
+    <section id="contacts" class="section contacts">
+        <div class="container">
+            <h2 class="section-title">Контакты</h2>
+            <div class="contacts-content">
+                <div class="contact-info">
+                    {{#if phone}}
+                    <div class="contact-item">
+                        <strong>Телефон:</strong>
+                        <a href="tel:{{phone}}">{{phone}}</a>
+                    </div>
+                    {{/if}}
+                    {{#if email}}
+                    <div class="contact-item">
+                        <strong>Email:</strong>
+                        <a href="mailto:{{email}}">{{email}}</a>
+                    </div>
+                    {{/if}}
+                    {{#if address}}
+                    <div class="contact-item">
+                        <strong>Адрес:</strong>
+                        <span>{{address}}</span>
+                    </div>
+                    {{/if}}
+                    {{#if workingHours}}
+                    <div class="contact-item">
+                        <strong>Режим работы:</strong>
+                        <span>{{workingHours}}</span>
+                    </div>
+                    {{/if}}
+                </div>
+                {{#if mapUrl}}
+                <div class="contact-map">
+                    <iframe src="{{mapUrl}}" 
+                            width="100%" 
+                            height="400" 
+                            style="border:0;" 
+                            allowfullscreen="" 
+                            loading="lazy">
+                    </iframe>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 {{organizationName}}. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <!-- Order Modal -->
+    <div id="order-modal" class="order-modal">
+        <div class="order-modal-content">
+            <div class="order-modal-header">
+                <h2>Оформление заказа</h2>
+                <button class="close-modal" onclick="closeOrderModal()">&times;</button>
+            </div>
+            <div class="order-modal-body">
+                <!-- Cart Section -->
+                <div class="cart-section">
+                    <h3>Ваш заказ</h3>
+                    <div id="empty-cart" class="empty-cart">
+                        Корзина пуста. Добавьте товары из каталога.
+                    </div>
+                    <div id="cart-items" class="cart-items"></div>
+                    <div class="cart-total">
+                        <span>Итого:</span>
+                        <span><span id="cart-total">0</span> руб.</span>
+                    </div>
+                </div>
+
+                <!-- Order Form -->
+                <form class="order-form" onsubmit="submitOrder(event)">
+                    <div class="form-section">
+                        <h3>Контактная информация</h3>
+                        
+                        <div class="form-group">
+                            <label for="customerName">
+                                Ваше имя <span class="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="customerName" 
+                                   name="customerName" 
+                                   class="form-input" 
+                                   placeholder="Иван Иванов"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customerPhone">
+                                Телефон <span class="required">*</span>
+                            </label>
+                            <input type="tel" 
+                                   id="customerPhone" 
+                                   name="customerPhone" 
+                                   class="form-input" 
+                                   placeholder="+7 (___) ___-__-__"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customerEmail">
+                                Email
+                            </label>
+                            <input type="email" 
+                                   id="customerEmail" 
+                                   name="customerEmail" 
+                                   class="form-input" 
+                                   placeholder="example@mail.ru">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Дополнительная информация</h3>
+                        
+                        <div class="form-group">
+                            <label for="deliveryAddress">
+                                Адрес доставки
+                            </label>
+                            <input type="text" 
+                                   id="deliveryAddress" 
+                                   name="deliveryAddress" 
+                                   class="form-input" 
+                                   placeholder="г. Москва, ул. Ленина, д. 1, кв. 10">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="comment">
+                                Комментарий к заказу
+                            </label>
+                            <textarea id="comment" 
+                                      name="comment" 
+                                      class="form-input" 
+                                      placeholder="Укажите удобное время доставки или другие пожелания"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            Оформить заказ
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeOrderModal()">
+                            Отмена
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="order-form.js"></script>
+</body>
+</html>
+

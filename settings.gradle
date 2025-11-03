@@ -1,1 +1,13 @@
 rootProject.name = 'klassifikator'
+
+// Microservices
+include 'landing-service'
+include 'content-service'
+include 'template-service'
+include 'media-service'
+include 'integration-service'
+include 'order-service'
+include 'api-gateway'
+
+// Common modules
+include 'common'

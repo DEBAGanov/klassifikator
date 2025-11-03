@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест формы заказа - Klassifikator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .product-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .product-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .product-card .price {
+            color: #e74c3c;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .product-card button {
+            width: 100%;
+            padding: 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .product-card button:hover {
+            background: #2980b9;
+        }
+
+        .cart {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            min-width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .cart h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .cart-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-total {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #ddd;
+            font-size: 20px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 15px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .checkout-btn:hover {
+            background: #229954;
+        }
+
+        .order-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .notification.success {
+            border-left: 5px solid #27ae60;
+        }
+
+        .notification.error {
+            border-left: 5px solid #e74c3c;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛍️ Тестовый магазин мебели</h1>
+        
+        <div id="products" class="products">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <div class="order-form">
+            <h2>📝 Оформление заказа</h2>
+            <form id="orderForm">
+                <div class="form-group">
+                    <label for="customerName">Имя *</label>
+                    <input type="text" id="customerName" name="customerName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="customerPhone">Телефон *</label>
+                    <input type="tel" id="customerPhone" name="customerPhone" placeholder="+7 (900) 123-45-67" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="customerEmail">Email</label>
+                    <input type="email" id="customerEmail" name="customerEmail">
+                </div>
+
+                <div class="form-group">
+                    <label for="deliveryAddress">Адрес доставки</label>
+                    <textarea id="deliveryAddress" name="deliveryAddress"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="comment">Комментарий к заказу</label>
+                    <textarea id="comment" name="comment"></textarea>
+                </div>
+
+                <button type="submit" class="checkout-btn">Оформить заказ</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="cart">
+        <h2>🛒 Корзина</h2>
+        <div id="cartItems"></div>
+        <div class="cart-total">
+            Итого: <span id="cartTotal">0</span> ₽
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8086/api/v1';
+        const PRODUCTS_URL = 'http://localhost:8082/api/v1/content/organization/1/products';
+        const ORGANIZATION_ID = 1;
+        const LANDING_ID = 1;
+
+        let cart = [];
+        let products = [];
+
+        // Load products
+        async function loadProducts() {
+            try {
+                const response = await fetch(PRODUCTS_URL);
+                products = await response.json();
+                
+                const productsContainer = document.getElementById('products');
+                productsContainer.innerHTML = products
+                    .filter(p => p.isActive && p.imageId)
+                    .map(product => `
+                        <div class="product-card">
+                            <h3>${product.name}</h3>
+                            <div class="price">${product.price} ₽</div>
+                            <p>${product.description || ''}</p>
+                            <button onclick="addToCart(${product.id}, '${product.name}', ${product.price})">
+                                Добавить в корзину
+                            </button>
+                        </div>
+                    `).join('');
+            } catch (error) {
+                console.error('Error loading products:', error);
+                showNotification('Ошибка загрузки товаров', 'error');
+            }
+        }
+
+        // Add to cart
+        function addToCart(productId, productName, price) {
+            const existingItem = cart.find(item => item.productId === productId);
+            
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({
+                    productId,
+                    productName,
+                    price,
+                    quantity: 1
+                });
+            }
+            
+            updateCart();
+            showNotification(`${productName} добавлен в корзину`, 'success');
+        }
+
+        // Update cart display
+        function updateCart() {
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+            
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p style="color: #999;">Корзина пуста</p>';
+                cartTotal.textContent = '0';
+                return;
+            }
+            
+            cartItems.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div>${item.productName}</div>
+                    <div>Количество: ${item.quantity}</div>
+                    <div style="color: #e74c3c; font-weight: bold;">${item.price * item.quantity} ₽</div>
+                </div>
+            `).join('');
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            cartTotal.textContent = total.toFixed(0);
+        }
+
+        // Submit order
+        document.getElementById('orderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (cart.length === 0) {
+                showNotification('Корзина пуста!', 'error');
+                return;
+            }
+            
+            const formData = new FormData(e.target);
+            const orderData = {
+                organizationId: ORGANIZATION_ID,
+                landingId: LANDING_ID,
+                customerName: formData.get('customerName'),
+                customerPhone: formData.get('customerPhone'),
+                customerEmail: formData.get('customerEmail'),
+                deliveryAddress: formData.get('deliveryAddress'),
+                comment: formData.get('comment'),
+                items: cart.map(item => ({
+                    productId: item.productId,
+                    quantity: item.quantity
+                }))
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                if (response.ok) {
+                    const order = await response.json();
+                    showNotification(`Заказ #${order.id} успешно создан!`, 'success');
+                    cart = [];
+                    updateCart();
+                    e.target.reset();
+                } else {
+                    throw new Error('Failed to create order');
+                }
+            } catch (error) {
+                console.error('Error creating order:', error);
+                showNotification('Ошибка создания заказа', 'error');
+            }
+        });
+
+        // Show notification
+        function showNotification(message, type) {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <h3>${type === 'success' ? '✅' : '❌'} ${message}</h3>
+                <button onclick="this.parentElement.parentElement.remove(); this.parentElement.remove();" 
+                        style="margin-top: 15px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    OK
+                </button>
+            `;
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (overlay.parentElement) overlay.remove();
+                if (notification.parentElement) notification.remove();
+            }, 5000);
+        }
+
+        // Initialize
+        loadProducts();
+        updateCart();
+    </script>
+</body>
+</html>
+

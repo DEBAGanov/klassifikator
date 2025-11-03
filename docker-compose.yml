@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: klassifikator-postgres
+    environment:
+      POSTGRES_DB: klassifikator_dev
+      POSTGRES_USER: klassifikator
+      POSTGRES_PASSWORD: klassifikator_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - klassifikator-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klassifikator"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: klassifikator-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - klassifikator-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO S3-compatible storage (for local development)
+  minio:
+    image: minio/minio:latest
+    container_name: klassifikator-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - klassifikator-network
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # MinIO Client - Create bucket on startup
+  minio-setup:
+    image: minio/mc:latest
+    container_name: klassifikator-minio-setup
+    depends_on:
+      - minio
+    networks:
+      - klassifikator-network
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/klassifikator --ignore-existing;
+      /usr/bin/mc anonymous set download myminio/klassifikator;
+      exit 0;
+      "
+
+  # Application (uncomment when ready to run)
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: klassifikator-app
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: dev
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/klassifikator_dev
+  #     SPRING_DATASOURCE_USERNAME: klassifikator
+  #     SPRING_DATASOURCE_PASSWORD: klassifikator_dev_password
+  #     SPRING_DATA_REDIS_HOST: redis
+  #     SPRING_DATA_REDIS_PORT: 6379
+  #     S3_ENDPOINT: http://minio:9000
+  #     S3_ACCESS_KEY: minioadmin
+  #     S3_SECRET_KEY: minioadmin
+  #     S3_BUCKET_NAME: klassifikator
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - minio
+  #   networks:
+  #     - klassifikator-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  klassifikator-network:
+    driver: bridge
+

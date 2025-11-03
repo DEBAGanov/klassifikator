@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: template-service
+  
+  profiles:
+    active: dev
+  
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/klassifikator_dev}
+    username: ${DATABASE_USERNAME:klassifikator}
+    password: ${DATABASE_PASSWORD:klassifikator_dev_password}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    open-in-view: false
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+  
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: 8083
+
+# Service URLs for inter-service communication
+services:
+  content-service:
+    url: ${CONTENT_SERVICE_URL:http://localhost:8082}
+  landing-service:
+    url: ${LANDING_SERVICE_URL:http://localhost:8081}
+  content-service-url: ${CONTENT_SERVICE_URL:http://localhost:8082}
+  landing-service-url: ${LANDING_SERVICE_URL:http://localhost:8081}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    root: INFO
+    com.baganov.klassifikator.template: DEBUG
+    com.github.jknack.handlebars: DEBUG
+
