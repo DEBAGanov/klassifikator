@@ -9,6 +9,7 @@ package com.baganov.klassifikator.integration.controller;
 import com.baganov.klassifikator.integration.model.dto.GoogleSheetsSyncDto;
 import com.baganov.klassifikator.integration.model.dto.TelegramNotificationDto;
 import com.baganov.klassifikator.integration.service.GoogleSheetsService;
+import com.baganov.klassifikator.integration.service.GoogleSheetsOrderService;
 import com.baganov.klassifikator.integration.service.TelegramService;
 import com.baganov.klassifikator.integration.service.TelegramNotificationService;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ import java.util.Map;
 public class IntegrationController {
 
     private final GoogleSheetsService googleSheetsService;
+    private final GoogleSheetsOrderService googleSheetsOrderService;
     private final TelegramService telegramService;
     private final TelegramNotificationService telegramNotificationService;
 
@@ -52,6 +54,19 @@ public class IntegrationController {
         googleSheetsService.syncOrganizationData(organizationId);
         return ResponseEntity.ok().build();
     }
+    
+    /**
+     * Mass sync all organizations from Google Sheets
+     * Creates new organizations and landings if they don't exist
+     */
+    @PostMapping("/google-sheets/sync-all")
+    public ResponseEntity<Map<String, Object>> syncAllOrganizations(
+            @RequestParam(required = false) String spreadsheetId,
+            @RequestParam(defaultValue = "Organizations") String sheetName) {
+        log.info("POST /api/v1/integration/google-sheets/sync-all?sheetName={}", sheetName);
+        Map<String, Object> result = googleSheetsService.syncAllOrganizationsFromSheet(spreadsheetId, sheetName);
+        return ResponseEntity.ok(result);
+    }
 
     @GetMapping("/google-sheets/read")
     public ResponseEntity<List<Map<String, Object>>> readSpreadsheet(
@@ -60,6 +75,13 @@ public class IntegrationController {
         log.info("GET /api/v1/integration/google-sheets/read?spreadsheetId={}&range={}", spreadsheetId, range);
         List<Map<String, Object>> data = googleSheetsService.readSpreadsheetData(spreadsheetId, range);
         return ResponseEntity.ok(data);
+    }
+    
+    @GetMapping("/google-sheets/sheets")
+    public ResponseEntity<List<String>> getSheetNames(@RequestParam String spreadsheetId) {
+        log.info("GET /api/v1/integration/google-sheets/sheets?spreadsheetId={}", spreadsheetId);
+        List<String> sheetNames = googleSheetsService.getSheetNames(spreadsheetId);
+        return ResponseEntity.ok(sheetNames);
     }
 
     // Telegram endpoints
@@ -81,8 +103,14 @@ public class IntegrationController {
 
     @PostMapping("/telegram/notify/order")
     public ResponseEntity<Void> sendOrderNotification(@RequestBody Map<String, Object> orderData) {
-        log.info("POST /api/v1/integration/telegram/notify/order - Sending order notification");
+        log.info("POST /api/v1/integration/telegram/notify/order - Processing order #{}", orderData.get("orderId"));
+        
+        // 1. Write order to Google Sheets (orders sheet)
+        googleSheetsOrderService.writeOrderToSheet(orderData);
+        
+        // 2. Send Telegram notifications (main bot + organization bot if configured)
         telegramNotificationService.sendOrderNotification(orderData);
+        
         return ResponseEntity.ok().build();
     }
 

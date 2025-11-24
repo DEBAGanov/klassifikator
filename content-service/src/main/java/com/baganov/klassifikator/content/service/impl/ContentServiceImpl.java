@@ -112,8 +112,17 @@ public class ContentServiceImpl implements ContentService {
     public List<ProductDto> getActiveProducts(Long organizationId) {
         log.debug("Fetching active products for organization {}", organizationId);
 
-        List<Product> products = productRepository.findByOrganizationIdAndIsActive(organizationId, true);
-        return productMapper.toDtoList(products);
+        // Get all products for organization (treat null as active)
+        List<Product> products = productRepository.findByOrganizationId(organizationId);
+        // Filter only active (true or null)
+        List<Product> activeProducts = products.stream()
+                .filter(p -> p.getIsActive() == null || p.getIsActive())
+                .toList();
+        
+        log.debug("Found {} active products (including null as active) for organization {}", 
+                 activeProducts.size(), organizationId);
+        
+        return productMapper.toDtoList(activeProducts);
     }
 
     @Override
@@ -172,8 +181,28 @@ public class ContentServiceImpl implements ContentService {
     public List<PromotionDto> getActivePromotions(Long organizationId) {
         log.debug("Fetching active promotions for organization {}", organizationId);
 
-        List<Promotion> promotions = promotionRepository.findActivePromotions(organizationId, LocalDate.now());
-        return promotionMapper.toDtoList(promotions);
+        // Get all promotions for organization (treat null as active)
+        List<Promotion> promotions = promotionRepository.findByOrganizationId(organizationId);
+        // Filter only active (true or null, and valid date range)
+        LocalDate now = LocalDate.now();
+        List<Promotion> activePromotions = promotions.stream()
+                .filter(p -> p.getIsActive() == null || p.getIsActive())
+                .filter(p -> {
+                    // If no dates set, consider active
+                    if (p.getStartDate() == null && p.getEndDate() == null) {
+                        return true;
+                    }
+                    // Check date range
+                    boolean afterStart = p.getStartDate() == null || !now.isBefore(p.getStartDate());
+                    boolean beforeEnd = p.getEndDate() == null || !now.isAfter(p.getEndDate());
+                    return afterStart && beforeEnd;
+                })
+                .toList();
+        
+        log.debug("Found {} active promotions (including null as active) for organization {}", 
+                 activePromotions.size(), organizationId);
+        
+        return promotionMapper.toDtoList(activePromotions);
     }
 
     @Override

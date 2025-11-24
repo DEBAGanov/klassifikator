@@ -1,0 +1,60 @@
+# Wildcard сертификат с автоматическим выпуском для ВСЕХ поддоменов
+# Требует DNS-01 challenge через Cloudflare API
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod-dns
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: baganovs@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-dns
+    solvers:
+    # DNS-01 challenge для wildcard сертификатов
+    - dns01:
+        cloudflare:
+          email: baganovs@gmail.com  # Ваш email в Cloudflare
+          apiTokenSecretRef:
+            name: cloudflare-api-token-secret
+            key: api-token
+      selector:
+        dnsZones:
+        - "volzhck.ru"
+
+---
+# Создайте этот Secret с вашим Cloudflare API Token:
+# kubectl create secret generic cloudflare-api-token-secret \
+#   --from-literal=api-token=YOUR_CLOUDFLARE_API_TOKEN \
+#   -n cert-manager
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-api-token-secret
+  namespace: cert-manager
+type: Opaque
+stringData:
+  api-token: "ЗАМЕНИТЕ_НА_ВАШ_CLOUDFLARE_API_TOKEN"
+
+---
+# Wildcard Certificate - автоматически покрывает ВСЕ поддомены!
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-volzhck-ru
+  namespace: klassifikator
+spec:
+  secretName: wildcard-volzhck-ru-tls
+  issuerRef:
+    name: letsencrypt-prod-dns
+    kind: ClusterIssuer
+  commonName: "*.volzhck.ru"
+  dnsNames:
+  - "*.volzhck.ru"
+  - "volzhck.ru"
+  # Автоматическое продление за 30 дней до истечения
+  renewBefore: 720h  # 30 дней
+

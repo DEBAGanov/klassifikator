@@ -7,11 +7,13 @@
 package com.baganov.klassifikator.landing.service.impl;
 
 import com.baganov.klassifikator.common.model.entity.Landing;
+import com.baganov.klassifikator.common.model.entity.SeoData;
 import com.baganov.klassifikator.landing.mapper.LandingMapper;
 import com.baganov.klassifikator.landing.model.dto.LandingRequestDto;
 import com.baganov.klassifikator.landing.model.dto.LandingResponseDto;
 import com.baganov.klassifikator.landing.repository.LandingRepository;
 import com.baganov.klassifikator.landing.repository.OrganizationRepository;
+import com.baganov.klassifikator.landing.repository.SeoDataRepository;
 import com.baganov.klassifikator.landing.service.LandingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class LandingServiceImpl implements LandingService {
     private final LandingRepository landingRepository;
     private final OrganizationRepository organizationRepository;
     private final LandingMapper landingMapper;
+    private final SeoDataRepository seoDataRepository;
 
     @Override
     @Transactional
@@ -57,6 +60,23 @@ public class LandingServiceImpl implements LandingService {
         Landing savedLanding = landingRepository.save(landing);
         log.info("Successfully created landing with id {}", savedLanding.getId());
 
+        // Create SEO data if title or metaDescription provided
+        if (request.getTitle() != null || request.getMetaDescription() != null) {
+            log.info("Creating SEO data for landing {} with title: {}", savedLanding.getId(), request.getTitle());
+            
+            SeoData seoData = SeoData.builder()
+                    .landingId(savedLanding.getId())
+                    .title(request.getTitle())
+                    .metaDescription(request.getMetaDescription())
+                    .metaKeywords(request.getMetaKeywords())
+                    .ogTitle(request.getTitle()) // Use same title for OpenGraph
+                    .ogDescription(request.getMetaDescription()) // Use same description for OpenGraph
+                    .build();
+            
+            seoDataRepository.save(seoData);
+            log.info("Successfully created SEO data for landing {}", savedLanding.getId());
+        }
+
         return landingMapper.toDto(savedLanding);
     }
 
@@ -72,12 +92,21 @@ public class LandingServiceImpl implements LandingService {
     }
 
     @Override
-    @Cacheable(value = "landing", key = "#domain")
     public LandingResponseDto getLandingByDomain(String domain) {
         log.debug("Fetching landing with domain {}", domain);
         
         Landing landing = landingRepository.findByDomain(domain)
                 .orElseThrow(() -> new RuntimeException("Landing not found with domain: " + domain));
+        
+        return landingMapper.toDto(landing);
+    }
+
+    @Override
+    public LandingResponseDto getLandingBySubdomain(String subdomain) {
+        log.debug("Fetching landing with subdomain {}", subdomain);
+        
+        Landing landing = landingRepository.findBySubdomain(subdomain)
+                .orElseThrow(() -> new RuntimeException("Landing not found with subdomain: " + subdomain));
         
         return landingMapper.toDto(landing);
     }

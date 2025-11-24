@@ -149,6 +149,170 @@ public class GoogleSheetsServiceImpl implements GoogleSheetsService {
         }
     }
 
+    @Override
+    public Map<String, Object> syncAllOrganizationsFromSheet(String spreadsheetId, String sheetName) {
+        log.info("Syncing all organizations from spreadsheet: {}, sheet: {}", spreadsheetId, sheetName);
+        
+        // Use default spreadsheet ID from first sync record if not provided
+        if (spreadsheetId == null || spreadsheetId.isEmpty()) {
+            GoogleSheetsSync firstSync = syncRepository.findAll().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("No sync configuration found and spreadsheetId not provided"));
+            spreadsheetId = firstSync.getSpreadsheetId();
+        }
+        
+        int created = 0;
+        int updated = 0;
+        int failed = 0;
+        int deleted = 0;
+        int total = 0;
+        List<String> errors = new ArrayList<>();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        Set<String> sheetDomains = new HashSet<>();  // Track domains from Google Sheets
+        
+        try {
+            // Read all rows from Google Sheets
+            rows = readSpreadsheetData(spreadsheetId, sheetName + "!A:AB");
+            total = rows.size();
+            log.info("Read {} rows from Google Sheets (Organizations)", total);
+            
+            // Read products from separate sheet
+            List<Map<String, Object>> productsRows = new ArrayList<>();
+            try {
+                productsRows = readSpreadsheetData(spreadsheetId, "goods!A:F");
+                log.info("Read {} rows from Google Sheets (goods/products)", productsRows.size());
+            } catch (Exception e) {
+                log.warn("Failed to read products sheet 'goods': {}", e.getMessage());
+            }
+            
+            // Read promotions from separate sheet
+            List<Map<String, Object>> promotionsRows = new ArrayList<>();
+            // Try different sheet name variants
+            String[] promotionSheetNames = {"promotion", "Promotions", "Акции", "акции"};
+            for (String sheetNameVariant : promotionSheetNames) {
+                try {
+                    promotionsRows = readSpreadsheetData(spreadsheetId, sheetNameVariant + "!A:D");
+                    log.info("Read {} rows from Google Sheets (promotions/{})", promotionsRows.size(), sheetNameVariant);
+                    break; // Success, stop trying
+                } catch (Exception e) {
+                    log.debug("Failed to read promotions sheet '{}': {}", sheetNameVariant, e.getMessage());
+                }
+            }
+            if (promotionsRows.isEmpty()) {
+                log.warn("Could not read promotions from any sheet variant");
+            }
+            
+            // Group products by domain
+            Map<String, List<Map<String, Object>>> productsByDomain = groupByDomain(productsRows);
+            log.info("Grouped products into {} domains", productsByDomain.size());
+            
+            // Group promotions by domain
+            Map<String, List<Map<String, Object>>> promotionsByDomain = groupByDomain(promotionsRows);
+            log.info("Grouped promotions into {} domains", promotionsByDomain.size());
+            
+            for (Map<String, Object> row : rows) {
+                try {
+                    String domain = getStringValue(row, "Домен", "").trim();
+                    String name = getStringValue(row, "Название", "").trim();
+                    
+                    // Skip empty rows
+                    if (domain.isEmpty() || name.isEmpty()) {
+                        log.debug("Skipping row with empty domain or name");
+                        continue;
+                    }
+                    
+                    // Clean domain: remove protocol and trailing slashes
+                    domain = domain.replaceAll("^https?://", "").replaceAll("/$", "");
+                    
+                    // Track this domain
+                    sheetDomains.add(domain);
+                    
+                    // Get products and promotions for this domain
+                    List<Map<String, Object>> domainProducts = productsByDomain.getOrDefault(domain, new ArrayList<>());
+                    List<Map<String, Object>> domainPromotions = promotionsByDomain.getOrDefault(domain, new ArrayList<>());
+                    
+                    log.info("Domain {} has {} products and {} promotions", domain, domainProducts.size(), domainPromotions.size());
+                    
+                    // Process this organization with its products and promotions
+                    boolean isNew = dataProcessor.processOrganizationRow(row, domain, name, domainProducts, domainPromotions);
+                    
+                    if (isNew) {
+                        created++;
+                        log.info("✅ Created new organization: {} ({}) with {} products, {} promotions", 
+                                name, domain, domainProducts.size(), domainPromotions.size());
+                    } else {
+                        updated++;
+                        log.info("🔄 Updated existing organization: {} ({}) with {} products, {} promotions", 
+                                name, domain, domainProducts.size(), domainPromotions.size());
+                    }
+                    
+                } catch (Exception e) {
+                    failed++;
+                    String errorMsg = "Failed to process row: " + e.getMessage();
+                    errors.add(errorMsg);
+                    log.error(errorMsg, e);
+                }
+            }
+            
+            // Delete organizations/landings that are NOT in Google Sheets
+            try {
+                deleted = dataProcessor.deleteOrganizationsNotInSheet(sheetDomains);
+                log.info("🗑️  Deleted {} organizations not in Google Sheets", deleted);
+            } catch (Exception e) {
+                log.error("Failed to delete old organizations", e);
+                errors.add("Failed to delete old organizations: " + e.getMessage());
+            }
+            
+        } catch (Exception e) {
+            log.error("Failed to sync all organizations", e);
+            throw new RuntimeException("Failed to sync all organizations: " + e.getMessage());
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", total);
+        result.put("created", created);
+        result.put("deleted", deleted);
+        result.put("updated", updated);
+        result.put("failed", failed);
+        result.put("errors", errors);
+        result.put("status", "SUCCESS");
+        result.put("timestamp", LocalDateTime.now());
+        
+        log.info("Sync completed: {} created, {} updated, {} failed", created, updated, failed);
+        return result;
+    }
+    
+    private String getStringValue(Map<String, Object> data, String key, String defaultValue) {
+        Object value = data.get(key);
+        return value != null && !value.toString().trim().isEmpty() ? value.toString().trim() : defaultValue;
+    }
+    
+    /**
+     * Group rows by domain
+     * @param rows List of rows from Google Sheets
+     * @return Map of domain to list of rows
+     */
+    private Map<String, List<Map<String, Object>>> groupByDomain(List<Map<String, Object>> rows) {
+        Map<String, List<Map<String, Object>>> grouped = new HashMap<>();
+        
+        for (Map<String, Object> row : rows) {
+            String domain = getStringValue(row, "Домен", "").trim();
+            
+            // Skip empty domains
+            if (domain.isEmpty()) {
+                continue;
+            }
+            
+            // Clean domain: remove protocol and trailing slashes
+            domain = domain.replaceAll("^https?://", "").replaceAll("/$", "");
+            
+            // Add row to domain group
+            grouped.computeIfAbsent(domain, k -> new ArrayList<>()).add(row);
+        }
+        
+        return grouped;
+    }
+
     private GoogleSheetsSyncDto mapToDto(GoogleSheetsSync entity) {
         return GoogleSheetsSyncDto.builder()
                 .id(entity.getId())
@@ -161,6 +325,24 @@ public class GoogleSheetsServiceImpl implements GoogleSheetsService {
                 .lastSyncStatus(entity.getLastSyncStatus())
                 .createdAt(entity.getCreatedAt())
                 .build();
+    }
+    
+    @Override
+    public List<String> getSheetNames(String spreadsheetId) {
+        try {
+            log.info("Getting sheet names for spreadsheet: {}", spreadsheetId);
+            com.google.api.services.sheets.v4.model.Spreadsheet spreadsheet = 
+                sheetsService.spreadsheets()
+                    .get(spreadsheetId)
+                    .execute();
+            
+            return spreadsheet.getSheets().stream()
+                .map(sheet -> sheet.getProperties().getTitle())
+                .collect(java.util.stream.Collectors.toList());
+        } catch (Exception e) {
+            log.error("Failed to get sheet names: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get sheet names: " + e.getMessage(), e);
+        }
     }
 }
 

@@ -25,8 +25,17 @@ public class LandingRequestDto {
     @NotBlank(message = "Subdomain is required")
     private String subdomain;
 
+    private String domain;
+
     private Long templateId;
 
     private String status;
+
+    // SEO fields
+    private String title;
+
+    private String metaDescription;
+
+    private String metaKeywords;
 }
 

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrganizationRepository extends JpaRepository<Organization, Long> {
@@ -18,5 +19,9 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     List<Organization> findByStatus(String status);
     
     List<Organization> findByCategory(String category);
+    
+    Optional<Organization> findByName(String name);
+    
+    boolean existsByName(String name);
 }
 

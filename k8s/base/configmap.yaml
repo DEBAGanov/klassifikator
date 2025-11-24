@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: klassifikator-config
+  namespace: klassifikator
+data:
+  # Database
+  DB_NAME: "klassifikator"
+  DB_USER: "klassifikator"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  
+  # Redis
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # MinIO
+  MINIO_ENDPOINT: "http://minio-service:9000"
+  MINIO_BUCKET_NAME: "klassifikator"
+  MINIO_ROOT_USER: "minioadmin"
+  
+  # Service URLs
+  LANDING_SERVICE_URL: "http://landing-service:8081"
+  CONTENT_SERVICE_URL: "http://content-service:8082"
+  TEMPLATE_SERVICE_URL: "http://template-service:8083"
+  MEDIA_SERVICE_URL: "http://media-service:8084"
+  INTEGRATION_SERVICE_URL: "http://integration-service:8085"
+  ORDER_SERVICE_URL: "http://order-service:8086"
+  
+  # Spring Profiles
+  SPRING_PROFILES_ACTIVE: "prod"
+  
+  # Google Sheets
+  GOOGLE_SHEETS_SPREADSHEET_ID: "1KS2TOS5ZKxONDmUaVoiwb3tyu3Y1DlGQaME2KM4vItQ"
+  GOOGLE_SHEETS_APP_NAME: "Klassifikator"
+  GOOGLE_SHEETS_SYNC_INTERVAL: "1800000"
+

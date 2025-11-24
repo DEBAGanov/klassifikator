@@ -292,6 +292,30 @@ public class OrderServiceImpl implements OrderService {
                 orderData.put("domain", domain);
             }
             
+            // Add organization details (name, telegram bot token, chat ID)
+            try {
+                Organization organization = organizationRepository.findById(order.getOrganizationId()).orElse(null);
+                if (organization != null) {
+                    orderData.put("organizationName", organization.getName());
+                    
+                    // Add organization's custom Telegram bot if configured
+                    if (organization.getTelegramBotToken() != null && !organization.getTelegramBotToken().isEmpty()) {
+                        orderData.put("organizationTelegramBotToken", organization.getTelegramBotToken());
+                        log.debug("Organization {} has custom Telegram bot token configured", organization.getName());
+                    }
+                    
+                    if (organization.getTelegramChatId() != null && !organization.getTelegramChatId().isEmpty()) {
+                        orderData.put("organizationTelegramChatId", organization.getTelegramChatId());
+                        // For Google Sheets "Бот клиента" column
+                        orderData.put("organizationTelegramBot", organization.getTelegramChatId());
+                        log.debug("Organization {} has custom Telegram chat ID configured: {}", 
+                                  organization.getName(), organization.getTelegramChatId());
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Could not fetch organization details for order {}", order.getId());
+            }
+            
             // Add items
             List<Map<String, Object>> items = new ArrayList<>();
             for (OrderItem item : order.getItems()) {
@@ -305,8 +329,14 @@ public class OrderServiceImpl implements OrderService {
             orderData.put("items", items);
             
             // Call Integration Service to send Telegram notification
+            // Use service name for Kubernetes, localhost for local development
+            String integrationServiceUrl = System.getenv().getOrDefault(
+                "INTEGRATION_SERVICE_URL", 
+                "http://localhost:8085"
+            );
+            
             WebClient webClient = webClientBuilder
-                    .baseUrl("http://localhost:8085")
+                    .baseUrl(integrationServiceUrl)
                     .build();
             
             webClient.post()

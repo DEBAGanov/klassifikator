@@ -18,8 +18,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -209,6 +208,24 @@ public class TemplateRenderServiceImpl implements TemplateRenderService {
 
             // Products
             data.put("products", fullContent.get("products"));
+            
+            // Extract unique product categories
+            List<Map<String, Object>> products = (List<Map<String, Object>>) fullContent.get("products");
+            if (products != null && !products.isEmpty()) {
+                Set<String> categories = new LinkedHashSet<>();
+                for (Map<String, Object> product : products) {
+                    Object category = product.get("category");
+                    if (category != null && !category.toString().trim().isEmpty()) {
+                        categories.add(category.toString().trim());
+                    }
+                }
+                List<String> categoriesList = new ArrayList<>(categories);
+                data.put("productCategories", categoriesList);
+                log.debug("Extracted {} product categories for organization {}: {}", 
+                         categoriesList.size(), organizationId, categoriesList);
+            } else {
+                log.debug("No products found for organization {}", organizationId);
+            }
 
             // Promotions
             data.put("promotions", fullContent.get("promotions"));

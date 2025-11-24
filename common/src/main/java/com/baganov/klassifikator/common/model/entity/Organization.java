@@ -57,6 +57,12 @@ public class Organization {
     @Column(name = "google_sheet_id", length = 255)
     private String googleSheetId;
 
+    @Column(name = "telegram_bot_token", length = 500)
+    private String telegramBotToken;
+
+    @Column(name = "telegram_chat_id", length = 100)
+    private String telegramChatId;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

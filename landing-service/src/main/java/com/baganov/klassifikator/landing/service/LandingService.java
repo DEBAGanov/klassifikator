@@ -38,6 +38,14 @@ public interface LandingService {
     LandingResponseDto getLandingByDomain(String domain);
 
     /**
+     * Get landing by subdomain
+     *
+     * @param subdomain subdomain part (e.g. "modernissimo")
+     * @return landing details
+     */
+    LandingResponseDto getLandingBySubdomain(String subdomain);
+
+    /**
      * Get all landings for organization
      *
      * @param organizationId organization ID

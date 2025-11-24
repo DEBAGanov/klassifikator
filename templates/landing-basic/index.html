@@ -58,11 +58,52 @@
         </div>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Hero Slider Section -->
+    {{#if companyPhotos}}
+    <section class="hero-slider">
+        <div class="slider-container">
+            {{#each companyPhotos}}
+            <div class="slide {{#if @first}}active{{/if}}">
+                <img src="{{this}}" alt="{{../organizationName}}" class="slide-image">
+                <div class="slide-overlay"></div>
+            </div>
+            {{/each}}
+        </div>
+        
+        <div class="slider-content">
+            <div class="container">
+                <h1 class="slider-title">{{organizationName}}</h1>
+                <p class="slider-description">{{description}}</p>
+                <div class="slider-buttons">
+                    <a href="#products" class="btn btn-primary">Перейти к каталогу</a>
+                    <a href="#contacts" class="btn btn-secondary">Связаться с нами</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slider Controls -->
+        {{#if companyPhotos.[1]}}
+        <button class="slider-control prev" onclick="changeSlide(-1)" aria-label="Предыдущий слайд">
+            <span>‹</span>
+        </button>
+        <button class="slider-control next" onclick="changeSlide(1)" aria-label="Следующий слайд">
+            <span>›</span>
+        </button>
+        
+        <!-- Slider Indicators -->
+        <div class="slider-indicators">
+            {{#each companyPhotos}}
+            <button class="indicator {{#if @first}}active{{/if}}" onclick="goToSlide({{@index}})" aria-label="Слайд {{@index}}"></button>
+            {{/each}}
+        </div>
+        {{/if}}
+    </section>
+    {{else}}
+    <!-- Fallback Hero Section (if no photos) -->
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <h1>{{h1}}</h1>
+                <h1>{{organizationName}}</h1>
                 <p class="hero-description">{{description}}</p>
                 <div class="hero-buttons">
                     <a href="#products" class="btn btn-primary">Перейти к каталогу</a>
@@ -71,8 +112,10 @@
             </div>
         </div>
     </section>
+    {{/if}}
 
     <!-- About Section -->
+    {{#if aboutUs}}
     <section id="about" class="section about">
         <div class="container">
             <h2 class="section-title">О нас</h2>
@@ -80,26 +123,39 @@
                 <div class="about-text">
                     <p>{{aboutUs}}</p>
                 </div>
-                <div class="about-features">
-                    <div class="feature">
-                        <div class="feature-icon">✓</div>
-                        <h3>Качество</h3>
-                        <p>Гарантия на все товары</p>
-                    </div>
-                    <div class="feature">
-                        <div class="feature-icon">⚡</div>
-                        <h3>Доставка</h3>
-                        <p>Быстрая доставка</p>
-                    </div>
-                    <div class="feature">
-                        <div class="feature-icon">💰</div>
-                        <h3>Цены</h3>
-                        <p>Выгодные предложения</p>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
+    {{/if}}
+
+    <!-- Reviews Section (Yandex Reviews Widget) -->
+    {{#if yandexReviewsWidget}}
+    <section id="reviews" class="section reviews">
+        <div class="container">
+            <h2 class="section-title">Отзывы наших клиентов</h2>
+            <div class="reviews-widget">
+                {{{yandexReviewsWidget}}}
+            </div>
+        </div>
+    </section>
+    {{/if}}
+
+    <!-- Features Section -->
+    {{#if features}}
+    <section id="features" class="section features">
+        <div class="container">
+            <h2 class="section-title">Особенности</h2>
+            <div class="features-grid">
+                {{#each features}}
+                <div class="feature-card">
+                    <div class="feature-icon">{{getFeatureIcon this}}</div>
+                    <h3 class="feature-title">{{this}}</h3>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </section>
+    {{/if}}
 
     <!-- Promotions Section -->
     {{#if promotions}}
@@ -131,17 +187,22 @@
     <section id="products" class="section products">
         <div class="container">
             <h2 class="section-title">Каталог товаров</h2>
+            
+            <!-- Category Filters -->
+            <div class="category-filters">
+                <button class="category-filter active" data-category="all">Все</button>
+                {{#each productCategories}}
+                <button class="category-filter" data-category="{{this}}">{{this}}</button>
+                {{/each}}
+            </div>
+            
+            <!-- Products with images (Grid) -->
             <div class="products-grid">
                 {{#each products}}
-                <div class="product-card" data-product-id="{{id}}">
+                {{#if imageUrl}}
+                <div class="product-card" data-product-id="{{id}}" data-category="{{category}}">
                     <div class="product-image-container">
-                        {{#if imageUrl}}
                         <img src="{{imageUrl}}" alt="{{name}}" class="product-image" loading="lazy">
-                        {{else}}
-                        <div class="product-image-placeholder">
-                            <span>📦</span>
-                        </div>
-                        {{/if}}
                     </div>
                     <div class="product-content">
                         <h3 class="product-name">{{name}}</h3>
@@ -162,6 +223,36 @@
                         {{/if}}
                     </div>
                 </div>
+                {{/if}}
+                {{/each}}
+            </div>
+            
+            <!-- Products without images (List) -->
+            <div class="products-list">
+                {{#each products}}
+                {{#unless imageUrl}}
+                <div class="product-list-item" data-product-id="{{id}}" data-category="{{category}}">
+                    <div class="product-list-info">
+                        <div class="product-list-header">
+                            <h3 class="product-list-name">{{name}}</h3>
+                            {{#if price}}
+                            <p class="product-list-price">{{formatPrice price}} ₽</p>
+                            {{/if}}
+                        </div>
+                        {{#if description}}
+                        <p class="product-list-description">{{description}}</p>
+                        {{/if}}
+                    </div>
+                    {{#if price}}
+                    <button 
+                        class="btn btn-primary btn-add-to-cart" 
+                        onclick="addToCart({{id}}, '{{name}}', {{price}})"
+                        data-product-id="{{id}}">
+                        В корзину
+                    </button>
+                    {{/if}}
+                </div>
+                {{/unless}}
                 {{/each}}
             </div>
         </div>
@@ -175,6 +266,22 @@
             <h2 class="section-title">Отзывы клиентов</h2>
             <div class="reviews-widget">
                 {{{yandexReviewsWidget}}}
+            </div>
+        </div>
+    </section>
+    {{/if}}
+
+    <!-- Photos Gallery Section -->
+    {{#if photos}}
+    <section id="photos" class="section photos">
+        <div class="container">
+            <h2 class="section-title">Фотогалерея</h2>
+            <div class="photos-grid">
+                {{#each photos}}
+                <div class="photo-item">
+                    <img src="{{this}}" alt="Фото {{@index}}" class="gallery-image" loading="lazy">
+                </div>
+                {{/each}}
             </div>
         </div>
     </section>
@@ -205,9 +312,9 @@
                         <p>{{workingHours}}</p>
                     </div>
                 </div>
-                {{#if mapCoordinates}}
+                {{#if yandexMapWidget}}
                 <div class="contacts-map">
-                    <div id="yandex-map" style="width: 100%; height: 400px;"></div>
+                    {{{yandexMapWidget}}}
                 </div>
                 {{/if}}
             </div>
@@ -325,30 +432,14 @@
         // Global configuration
         window.ORGANIZATION_ID = {{organizationId}};
         window.LANDING_ID = {{landingId}};
-        window.API_URL = 'http://localhost:8080/api/v1';
+        // Auto-detect API URL based on environment
+        window.API_URL = window.location.hostname.includes('volzhck.ru')
+            ? 'https://api.volzhck.ru/api/v1'  // Production
+            : 'http://localhost:8080/api/v1';  // Local development
     </script>
     <!-- JavaScript будет встроен сервером -->
     <script src="order-form.js"></script>
     
-    <!-- Yandex Maps API -->
-    {{#if mapCoordinates}}
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=YOUR_API_KEY&lang=ru_RU" type="text/javascript"></script>
-    <script>
-        ymaps.ready(function() {
-            var map = new ymaps.Map('yandex-map', {
-                center: [{{mapCoordinates}}],
-                zoom: 15
-            });
-            
-            var placemark = new ymaps.Placemark([{{mapCoordinates}}], {
-                balloonContent: '{{organizationName}}<br>{{address}}'
-            });
-            
-            map.geoObjects.add(placemark);
-        });
-    </script>
-    {{/if}}
-
     <!-- Yandex Metrika -->
     {{#if yandexMetrikaId}}
     <script type="text/javascript">

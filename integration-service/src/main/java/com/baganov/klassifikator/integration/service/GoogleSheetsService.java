@@ -22,5 +22,17 @@ public interface GoogleSheetsService {
     void syncAllActiveOrganizations();
 
     List<Map<String, Object>> readSpreadsheetData(String spreadsheetId, String range);
+    
+    /**
+     * Sync all organizations from Google Sheets
+     * Creates new organizations and landings if they don't exist
+     * Updates existing organizations
+     */
+    Map<String, Object> syncAllOrganizationsFromSheet(String spreadsheetId, String sheetName);
+    
+    /**
+     * Get list of all sheet names in a spreadsheet
+     */
+    List<String> getSheetNames(String spreadsheetId);
 }
 

@@ -11,8 +11,8 @@ dependencies {
     
     // Database
     runtimeOnly 'org.postgresql:postgresql'
-    api 'org.flywaydb:flyway-core'
-    api 'org.flywaydb:flyway-database-postgresql'
+    api 'org.flywaydb:flyway-core:10.19.0'
+    api 'org.flywaydb:flyway-database-postgresql:10.19.0'
     
     // MapStruct for DTO mapping
     api 'org.mapstruct:mapstruct:1.5.5.Final'

@@ -44,7 +44,7 @@ public class GoogleSheetsConfig {
 
         GoogleCredentials credentials = GoogleCredentials
                 .fromStream(new FileInputStream(credentialsPath))
-                .createScoped(Collections.singletonList(SheetsScopes.SPREADSHEETS_READONLY));
+                .createScoped(Collections.singletonList(SheetsScopes.SPREADSHEETS));
 
         return new Sheets.Builder(httpTransport, JSON_FACTORY, new HttpCredentialsAdapter(credentials))
                 .setApplicationName(applicationName)

@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: klassifikator
+  labels:
+    app: api-gateway
+    component: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+        component: gateway
+    spec:
+      imagePullSecrets:
+      - name: timeweb-registry
+      containers:
+      - name: api-gateway
+        image: 12df3fb9-wise-cepheus.registry.twcstorage.ru/api-gateway:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: klassifikator-config
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        - name: SERVICES_LANDING_URL
+          value: "http://landing-service:8081"
+        - name: SERVICES_CONTENT_URL
+          value: "http://content-service:8082"
+        - name: SERVICES_TEMPLATE_URL
+          value: "http://template-service:8083"
+        - name: SERVICES_MEDIA_URL
+          value: "http://media-service:8084"
+        - name: SERVICES_INTEGRATION_URL
+          value: "http://integration-service:8085"
+        - name: SERVICES_ORDER_URL
+          value: "http://order-service:8086"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: klassifikator
+  labels:
+    app: api-gateway
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: api-gateway
+

@@ -57,6 +57,16 @@ public class LandingController {
     }
 
     /**
+     * Get landing by subdomain
+     */
+    @GetMapping("/by-subdomain/{subdomain}")
+    public ResponseEntity<LandingResponseDto> getLandingBySubdomain(@PathVariable String subdomain) {
+        log.info("GET /api/v1/landings/by-subdomain/{} - Fetching landing", subdomain);
+        LandingResponseDto response = landingService.getLandingBySubdomain(subdomain);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Get all landings for organization
      */
     @GetMapping("/organization/{organizationId}")

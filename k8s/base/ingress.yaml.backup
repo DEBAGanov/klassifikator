@@ -1,0 +1,84 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: klassifikator-ingress
+  namespace: klassifikator
+  annotations:
+    # Timeweb Cloud использует Nginx Ingress Controller
+    kubernetes.io/ingress.class: "nginx"
+    # Автоматическое получение SSL сертификата через cert-manager
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Перенаправление HTTP на HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Размер тела запроса (для загрузки файлов)
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    # Таймауты
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  tls:
+  - hosts:
+    - volzhck.ru
+    - "*.volzhck.ru"
+    secretName: klassifikator-tls
+  rules:
+  # API Gateway (для API запросов)
+  - host: api.volzhck.ru
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 8080
+  
+  # Template Service (для рендеринга лендингов)
+  - host: "*.volzhck.ru"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: template-service
+            port:
+              number: 8083
+  
+  # Основной домен (редирект на API Gateway)
+  - host: volzhck.ru
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: template-service
+            port:
+              number: 8083
+---
+# ClusterIssuer для автоматического получения SSL сертификатов
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: zq97483@timeweb.cloud  # Ваш email для Let's Encrypt
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+

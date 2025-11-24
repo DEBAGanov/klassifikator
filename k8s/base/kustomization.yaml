@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: klassifikator
+
+resources:
+  # Namespace
+  - namespace.yaml
+  
+  # Configuration
+  - configmap.yaml
+  - secrets.yaml
+  
+  # Persistent Volumes
+  - postgres-pvc.yaml
+  - redis-pvc.yaml
+  - minio-pvc.yaml
+  
+  # Infrastructure
+  - postgres-deployment.yaml
+  - redis-deployment.yaml
+  - minio-deployment.yaml
+  
+  # Microservices
+  - landing-service-deployment.yaml
+  - content-service-deployment.yaml
+  - template-service-deployment.yaml
+  - media-service-deployment.yaml
+  - integration-service-deployment.yaml
+  - order-service-deployment.yaml
+  - api-gateway-deployment.yaml
+  
+  # Ingress
+  - ingress.yaml
+
+# Общие метки для всех ресурсов
+commonLabels:
+  app.kubernetes.io/name: klassifikator
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: kustomize
+
+# Общие аннотации
+commonAnnotations:
+  description: "Klassifikator - Landing Pages Management System"
+

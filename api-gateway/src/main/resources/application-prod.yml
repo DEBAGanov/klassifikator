@@ -1,0 +1,80 @@
+spring:
+  application:
+    name: api-gateway
+  
+  # Database configuration - не используется в API Gateway
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+  
+  # JPA configuration
+  
+  # Redis configuration
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:redis}
+      port: ${SPRING_REDIS_8080:6379}
+      password: ${SPRING_REDIS_PASSWORD}
+      timeout: 60000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+  
+  # Flyway configuration
+
+# Service URLs for Kubernetes
+services:
+  landing:
+    url: http://landing-service:8081
+  content:
+    url: http://content-service:8082
+  template:
+    url: http://template-service:8083
+  media:
+    url: http://media-service:8084
+  integration:
+    url: http://integration-service:8085
+  order:
+    url: http://order-service:8086
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.baganov.klassifikator: INFO
+    org.springframework.web: WARN
+    org.hibernate: WARN
+  file:
+    name: /app/logs/api-gateway.log
+    max-size: 100MB
+    max-history: 30
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Server configuration
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,application/json,application/javascript
+  http2:
+    enabled: true

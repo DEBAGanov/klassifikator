@@ -33,20 +33,37 @@ public class TelegramNotificationService {
     private boolean enabled;
 
     /**
-     * Send order notification to Telegram
+     * Send order notification to Telegram (both main bot and organization bot if configured)
      */
     public void sendOrderNotification(Map<String, Object> orderData) {
-        if (!enabled || botToken.isEmpty() || chatId.isEmpty()) {
-            log.warn("Telegram notifications are disabled or not configured");
-            return;
+        String message = buildOrderMessage(orderData);
+        
+        // 1. Send to MAIN bot @ZZZorderbot (ALWAYS)
+        if (enabled && !botToken.isEmpty() && !chatId.isEmpty()) {
+            try {
+                sendMessage(message, botToken, chatId);
+                log.info("✅ Telegram notification sent to MAIN bot @ZZZorderbot for order #{}", orderData.get("orderId"));
+            } catch (Exception e) {
+                log.error("❌ Failed to send Telegram notification to MAIN bot", e);
+            }
+        } else {
+            log.warn("⚠️ Main Telegram bot is not configured. Skipping main bot notification.");
         }
-
-        try {
-            String message = buildOrderMessage(orderData);
-            sendMessage(message);
-            log.info("Telegram notification sent for order #{}", orderData.get("orderId"));
-        } catch (Exception e) {
-            log.error("Failed to send Telegram notification", e);
+        
+        // 2. Send to ORGANIZATION bot (if configured)
+        String orgTelegramBotToken = (String) orderData.get("organizationTelegramBotToken");
+        String orgTelegramChatId = (String) orderData.get("organizationTelegramChatId");
+        
+        if (orgTelegramBotToken != null && !orgTelegramBotToken.isEmpty() 
+                && orgTelegramChatId != null && !orgTelegramChatId.isEmpty()) {
+            try {
+                sendMessage(message, orgTelegramBotToken, orgTelegramChatId);
+                log.info("✅ Telegram notification sent to ORGANIZATION bot for order #{}", orderData.get("orderId"));
+            } catch (Exception e) {
+                log.error("❌ Failed to send Telegram notification to ORGANIZATION bot", e);
+            }
+        } else {
+            log.debug("ℹ️ Organization bot is not configured for this order. Skipping organization bot notification.");
         }
     }
 
@@ -105,10 +122,14 @@ public class TelegramNotificationService {
     }
 
     /**
-     * Send message to Telegram
+     * Send message to Telegram bot
+     * 
+     * @param message Message text
+     * @param token Telegram bot token
+     * @param chatId Chat ID to send to
      */
-    private void sendMessage(String message) {
-        String url = String.format("https://api.telegram.org/bot%s/sendMessage", botToken);
+    private void sendMessage(String message, String token, String chatId) {
+        String url = String.format("https://api.telegram.org/bot%s/sendMessage", token);
         
         Map<String, Object> request = new HashMap<>();
         request.put("chat_id", chatId);
@@ -122,10 +143,17 @@ public class TelegramNotificationService {
                 .retrieve()
                 .bodyToMono(Map.class)
                 .onErrorResume(e -> {
-                    log.error("Telegram API error", e);
+                    log.error("Telegram API error for chat {}: {}", chatId, e.getMessage());
                     return Mono.empty();
                 })
                 .subscribe(response -> log.debug("Telegram response: {}", response));
+    }
+    
+    /**
+     * Send message to Telegram (legacy method for main bot)
+     */
+    private void sendMessage(String message) {
+        sendMessage(message, botToken, chatId);
     }
 
     /**

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: klassifikator
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi  # Минимум для кэша
+  storageClassName: csi-ceph-hdd-ms1  # Timeweb Cloud storage class
+

@@ -1,0 +1,67 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: klassifikator-ingress
+  namespace: klassifikator
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # Используем ClusterIssuer с DNS-01 для wildcard
+    cert-manager.io/cluster-issuer: "letsencrypt-prod-dns"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  tls:
+  # Один wildcard сертификат покрывает ВСЕ поддомены!
+  - hosts:
+    - "*.volzhck.ru"
+    - "volzhck.ru"
+    secretName: wildcard-volzhck-ru-tls
+  
+  rules:
+  # API Gateway
+  - host: api.volzhck.ru
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 8080
+  
+  # ВСЕ остальные поддомены автоматически идут на Template Service
+  # Новые лендинги работают БЕЗ изменения конфигурации!
+  - host: "*.volzhck.ru"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: template-service
+            port:
+              number: 8083
+  
+  # Основной домен
+  - host: volzhck.ru
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: template-service
+            port:
+              number: 8083
+

@@ -1,0 +1,101 @@
+spring:
+  application:
+    name: integration-service
+  
+  # Database configuration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # JPA configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  
+  # Redis configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD}
+      timeout: 60000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+  
+  # Flyway configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.baganov.klassifikator: INFO
+    org.springframework.web: WARN
+    org.hibernate: WARN
+  file:
+    name: /app/logs/integration-service.log
+    max-size: 100MB
+    max-history: 30
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Server configuration
+server:
+  port: 8085
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,application/json,application/javascript
+  http2:
+    enabled: true
+
+# Google Sheets configuration
+google:
+  sheets:
+    credentials-path: ${GOOGLE_APPLICATION_CREDENTIALS:/app/config/credentials.json}
+    application-name: ${GOOGLE_SHEETS_APP_NAME:Klassifikator}
+    sync-interval-ms: ${GOOGLE_SHEETS_SYNC_INTERVAL:1800000}
+    spreadsheet-id: ${GOOGLE_SHEETS_SPREADSHEET_ID:1KS2TOS5ZKxONDmUaVoiwb3tyu3Y1DlGQaME2KM4vItQ}
+
+# Telegram Bot configuration (@ZZZorderbot - main bot for all orders)
+telegram:
+  bot:
+    token: ${TELEGRAM_BOT_TOKEN}
+    chat-id: ${TELEGRAM_CHAT_ID}
+    enabled: ${TELEGRAM_BOT_ENABLED:true}

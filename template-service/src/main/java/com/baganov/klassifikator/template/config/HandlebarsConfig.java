@@ -124,6 +124,39 @@ public class HandlebarsConfig {
                 return context.substring(0, length) + "...";
             }
         });
+        
+        // Helper for mapping feature names to icons
+        handlebars.registerHelper("getFeatureIcon", new Helper<String>() {
+            @Override
+            public Object apply(String context, Options options) throws IOException {
+                if (context == null) {
+                    return "✓";
+                }
+                
+                String featureName = context.toLowerCase().trim();
+                
+                // Map feature names to emoji icons
+                if (featureName.contains("доставка")) {
+                    return "🍕";
+                } else if (featureName.contains("кофе")) {
+                    return "☕";
+                } else if (featureName.contains("навынос") || featureName.contains("на вынос")) {
+                    return "🥡";
+                } else if (featureName.contains("парковка")) {
+                    return "🅿️";
+                } else if (featureName.contains("завтрак")) {
+                    return "⭐";
+                } else if (featureName.contains("детск")) {
+                    return "⭐";
+                } else if (featureName.contains("вызов") || featureName.contains("персонал")) {
+                    return "⭐";
+                } else if (featureName.contains("предзаказ") || featureName.contains("онлайн")) {
+                    return "⭐";
+                } else {
+                    return "✓";
+                }
+            }
+        });
     }
 
     private int compareNumbers(Object v1, Object v2) {

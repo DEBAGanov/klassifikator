@@ -366,4 +366,170 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Setup category filters
+    setupCategoryFilters();
+});
+
+// Category Filter Logic
+function setupCategoryFilters() {
+    const filterButtons = document.querySelectorAll('.category-filter');
+    const productCards = document.querySelectorAll('.product-card');
+    const productListItems = document.querySelectorAll('.product-list-item');
+    
+    if (filterButtons.length === 0 || (productCards.length === 0 && productListItems.length === 0)) {
+        return;
+    }
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const selectedCategory = this.getAttribute('data-category');
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter product cards (with images)
+            productCards.forEach(card => {
+                const productCategory = card.getAttribute('data-category');
+                
+                if (selectedCategory === 'all' || productCategory === selectedCategory) {
+                    card.classList.remove('hidden');
+                    // Smooth appearance animation
+                    card.style.animation = 'fadeIn 0.3s ease';
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            
+            // Filter product list items (without images)
+            productListItems.forEach(item => {
+                const productCategory = item.getAttribute('data-category');
+                
+                if (selectedCategory === 'all' || productCategory === selectedCategory) {
+                    item.classList.remove('hidden');
+                    // Smooth appearance animation
+                    item.style.animation = 'fadeIn 0.3s ease';
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+            
+            // Smooth scroll to products section
+            const productsSection = document.getElementById('products');
+            if (productsSection && selectedCategory !== 'all') {
+                setTimeout(() => {
+                    const productsList = document.querySelector('.products-grid');
+                    if (productsList) {
+                        productsList.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest'
+                        });
+                    }
+                }, 100);
+            }
+        });
+    });
+}
+
+// ============================================================================
+// HERO SLIDER LOGIC
+// ============================================================================
+
+let currentSlide = 0;
+let sliderInterval = null;
+
+// Initialize slider - GLOBAL FUNCTION
+window.initSlider = function() {
+    const slides = document.querySelectorAll('.slide');
+    if (slides.length <= 1) {
+        return; // No need for slider with 0 or 1 slide
+    }
+    
+    // Auto-play: change slide every 5 seconds
+    sliderInterval = setInterval(() => {
+        changeSlide(1);
+    }, 5000);
+    
+    // Pause on hover
+    const sliderContainer = document.querySelector('.hero-slider');
+    if (sliderContainer) {
+        sliderContainer.addEventListener('mouseenter', () => {
+            if (sliderInterval) {
+                clearInterval(sliderInterval);
+                sliderInterval = null;
+            }
+        });
+        
+        sliderContainer.addEventListener('mouseleave', () => {
+            if (!sliderInterval) {
+                sliderInterval = setInterval(() => {
+                    changeSlide(1);
+                }, 5000);
+            }
+        });
+    }
+};
+
+// Change slide - GLOBAL FUNCTION
+window.changeSlide = function(direction) {
+    const slides = document.querySelectorAll('.slide');
+    const indicators = document.querySelectorAll('.indicator');
+    
+    if (slides.length === 0) {
+        return;
+    }
+    
+    // Remove active class from current slide and indicator
+    slides[currentSlide].classList.remove('active');
+    if (indicators[currentSlide]) {
+        indicators[currentSlide].classList.remove('active');
+    }
+    
+    // Calculate new slide index
+    currentSlide = (currentSlide + direction + slides.length) % slides.length;
+    
+    // Add active class to new slide and indicator
+    slides[currentSlide].classList.add('active');
+    if (indicators[currentSlide]) {
+        indicators[currentSlide].classList.add('active');
+    }
+};
+
+// Go to specific slide - GLOBAL FUNCTION
+window.goToSlide = function(index) {
+    const slides = document.querySelectorAll('.slide');
+    const indicators = document.querySelectorAll('.indicator');
+    
+    if (slides.length === 0 || index < 0 || index >= slides.length) {
+        return;
+    }
+    
+    // Remove active class from current slide and indicator
+    slides[currentSlide].classList.remove('active');
+    if (indicators[currentSlide]) {
+        indicators[currentSlide].classList.remove('active');
+    }
+    
+    // Set new slide index
+    currentSlide = index;
+    
+    // Add active class to new slide and indicator
+    slides[currentSlide].classList.add('active');
+    if (indicators[currentSlide]) {
+        indicators[currentSlide].classList.add('active');
+    }
+    
+    // Reset auto-play timer
+    if (sliderInterval) {
+        clearInterval(sliderInterval);
+        sliderInterval = setInterval(() => {
+            changeSlide(1);
+        }, 5000);
+    }
+};
+
+// Initialize slider on DOM load
+document.addEventListener('DOMContentLoaded', function() {
+    initSlider();
 });
